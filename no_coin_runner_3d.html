@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>NO COIN RUNNER</title>
+<style>
+:root{--gold:#ffd34e;--mint:#42ffb0;--panel:#090d18eF;--line:#4dffb04a}
+*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#030611;color:#fff;font-family:Arial,system-ui,sans-serif;touch-action:none}
+#game{position:fixed;inset:0;width:100%;height:100%;display:block}
+#vignette{position:fixed;inset:0;pointer-events:none;background:radial-gradient(ellipse at center,transparent 40%,#02050bbd 100%)}
+#hud{position:fixed;inset:12px 12px auto;display:none;justify-content:space-between;align-items:flex-start;pointer-events:none;gap:8px}
+.hudbox{background:#060b16d9;border:1px solid #6effbd55;border-radius:10px;padding:8px 12px;box-shadow:0 0 16px #00ff9d18}
+.hudlabel{font-size:9px;letter-spacing:2px;color:#a4c9c0}.hudvalue{font-size:clamp(18px,4vw,27px);font-weight:900;font-variant-numeric:tabular-nums}
+#toast{position:fixed;top:18%;left:50%;transform:translateX(-50%);background:#07151beF;border:1px solid var(--mint);padding:12px 18px;border-radius:10px;display:none;text-align:center;font-weight:bold;box-shadow:0 0 24px #00ff9d55;z-index:5}
+#menu{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;padding:18px;background:linear-gradient(90deg,#030611a8,#03061140,#030611b8)}
+.panel{width:min(92vw,430px);max-height:92vh;overflow:auto;background:linear-gradient(160deg,#10182aF5,#060a14F5);border:1px solid #48f5a65c;border-radius:18px;padding:22px;box-shadow:0 0 45px #00ff9d1e;text-align:center}
+.logo{font-size:clamp(31px,8vw,48px);font-weight:1000;letter-spacing:2px;line-height:.95;text-shadow:0 0 20px #24ffa0}
+.logo span{color:var(--gold)}.sub{color:#9dbab2;font-size:11px;letter-spacing:4px;margin:9px 0 20px}
+button{border:1px solid #56ffb477;border-radius:9px;background:#0e2b27;color:white;padding:12px 14px;font-weight:900;letter-spacing:1px;cursor:pointer}
+button.primary{background:linear-gradient(90deg,#c18a17,#ffe477);color:#111;border:0;width:100%;font-size:17px;box-shadow:0 0 22px #ffcf4540;margin:8px 0}
+button.secondary{background:#101c29;border-color:#385c57}
+.row{display:flex;gap:8px}.row button{flex:1}
+.note{font-size:11px;line-height:1.5;color:#9bb5b0;margin-top:14px}
+.section{display:none}.section.active{display:block}
+h2{font-size:17px;letter-spacing:2px;margin:0 0 14px;color:var(--gold)}
+input{width:100%;padding:12px;background:#030811;border:1px solid #47796b;border-radius:8px;color:#fff;margin:6px 0}
+#touch{position:fixed;bottom:18px;left:0;right:0;display:none;justify-content:space-between;padding:0 18px;pointer-events:none}
+.touchgroup{display:flex;gap:10px}.touchbtn{pointer-events:auto;width:58px;height:58px;border-radius:50%;font-size:22px;background:#07131bcc;border:1px solid #7affbd88}
+#runmsg{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);font-size:10px;color:#b8d8cb;letter-spacing:2px;white-space:nowrap;pointer-events:none}
+table{width:100%;border-collapse:collapse;font-size:12px}td{padding:9px 5px;border-bottom:1px solid #ffffff16}td:first-child{color:var(--gold);font-weight:bold}
+.badge{display:inline-block;border:1px solid #52ffad77;border-radius:20px;padding:5px 9px;color:#a8ffd2;font-size:10px;margin:3px}
+@media(hover:hover) and (pointer:fine){#touch{display:none!important}}
+</style>
+</head>
+<body>
+<canvas id="game"></canvas><div id="vignette"></div>
+<div id="hud">
+ <div class="hudbox"><div class="hudlabel">NO COIN TIME</div><div class="hudvalue" id="clock">00:00.00</div></div>
+ <div class="hudbox" style="text-align:right"><div class="hudlabel">BEST</div><div class="hudvalue" id="best">00:00.00</div></div>
+</div>
+<div id="toast"></div>
+<div id="touch"><div class="touchgroup"><button class="touchbtn" id="left">‹</button><button class="touchbtn" id="right">›</button></div><div class="touchgroup"><button class="touchbtn" id="jump">↑</button></div></div>
+<div id="runmsg" style="display:none">A/D OU ←/→ PARA MUDAR DE FAIXA · ESPAÇO PARA PULAR</div>
+<div id="menu">
+ <div class="panel">
+  <div id="home" class="section active">
+   <div class="logo">NO COIN <span>RUNNER</span></div><div class="sub">ENDLESS RUN · GLOBAL CHALLENGE</div>
+   <div class="badge">3D RUN</div><div class="badge">NO COIN MODE</div><div class="badge">PT / EN</div>
+   <button class="primary" id="play">JOGAR</button>
+   <div class="row"><button class="secondary" id="leader">RANKING</button><button class="secondary" id="store">LOJA</button></div>
+   <div class="row" style="margin-top:8px"><button class="secondary" id="codes">CÓDIGOS</button><button class="secondary" id="lang">ENGLISH</button></div>
+   <div class="note">Desvie das moedas. Encostar em uma moeda encerra a tentativa e congela o cronômetro.</div>
+  </div>
+  <div id="dead" class="section"><h2 id="deadtitle">FIM DE JOGO</h2><div class="logo" id="finaltime">00:00.00</div><p id="deadreason" class="note">Você tocou em uma moeda.</p><button class="primary" id="retry">TENTAR NOVAMENTE</button><button class="secondary" id="back">MENU PRINCIPAL</button></div>
+  <div id="leaderboard" class="section"><h2>RANKING</h2><p class="note">Ranking demonstrativo neste navegador. O TOP GLOBAL online exige servidor e autenticação configurados.</p><table id="scores"></table><button class="secondary" id="leaderback" style="width:100%;margin-top:14px">VOLTAR</button></div>
+  <div id="shop" class="section"><h2>LOJA · CAPAS</h2><p class="note">Escolha uma aparência. Mais itens secretos podem ser desbloqueados com códigos.</p><div class="row"><button class="secondary skin" data-skin="red">VERMELHA</button><button class="secondary skin" data-skin="cyan">NEON</button><button class="secondary skin" data-skin="gold">DOURADA</button></div><button class="secondary" id="shopback" style="width:100%;margin-top:14px">VOLTAR</button></div>
+  <div id="redeem" class="section"><h2>CÓDIGOS SECRETOS</h2><p class="note">Encontre pistas no cenário e digite o código aqui.</p><input id="codeinput" placeholder="DIGITE O CÓDIGO"><button class="primary" id="redeembtn">RESGATAR</button><div id="codemsg" class="note"></div><button class="secondary" id="codeback" style="width:100%;margin-top:10px">VOLTAR</button></div>
+ </div>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r152/three.min.js"></script>
+<script>
+(()=>{
+const canvas=document.querySelector('#game');
+const renderer=new THREE.WebGLRenderer({canvas,antialias:true,alpha:false});
+renderer.setPixelRatio(Math.min(devicePixelRatio,1.8));renderer.setSize(innerWidth,innerHeight);renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+const scene=new THREE.Scene();scene.background=new THREE.Color(0x03100e);scene.fog=new THREE.Fog(0x03100e,24,125);
+const camera=new THREE.PerspectiveCamera(62,innerWidth/innerHeight,.1,220);camera.position.set(0,5.5,10.5);
+scene.add(new THREE.HemisphereLight(0x8bffd0,0x07110f,1.25));
+const sun=new THREE.DirectionalLight(0x8affc1,1.65);sun.position.set(-5,14,7);sun.castShadow=true;scene.add(sun);
+const mat=(color,emissive=0x000000)=>new THREE.MeshStandardMaterial({color,roughness:.7,emissive,emissiveIntensity:.65});
+const roadMat=mat(0x151d25),lineMat=mat(0x6bffac,0x1aff91),grassMat=mat(0x073b29),trunkMat=mat(0x49372a),leafMat=mat(0x087f4b,0x032c17),coinMat=new THREE.MeshStandardMaterial({color:0xffd52a,metalness:.8,roughness:.22,emissive:0x9a5b00,emissiveIntensity:.6}),barMat=mat(0xff435c,0x4b0010);
+const floor=new THREE.Mesh(new THREE.PlaneGeometry(200,220),grassMat);floor.rotation.x=-Math.PI/2;floor.position.set(0,-.12,-70);floor.receiveShadow=true;scene.add(floor);
+const road=new THREE.Mesh(new THREE.PlaneGeometry(8.4,220),roadMat);road.rotation.x=-Math.PI/2;road.position.set(0,0,-70);road.receiveShadow=true;scene.add(road);
+for(let x of [-1.4,1.4]){const stripe=new THREE.Mesh(new THREE.BoxGeometry(.045,.025,220),lineMat);stripe.position.set(x,.02,-70);scene.add(stripe)}
+for(let x of [-4.4,4.4]){const edge=new THREE.Mesh(new THREE.BoxGeometry(.09,.08,220),lineMat);edge.position.set(x,.03,-70);scene.add(edge)}
+const lanes=[-2.8,0,2.8];let playerLane=1,player,cloak,gameOn=false,started=0,elapsed=0,last=0,spawnCoin=0,spawnObs=0,objects=[],trees=[],jump=0,best=+(localStorage.getItem('ncr_best')||0),skin='red',lang='pt',secretFound=false;
+const clock=document.querySelector('#clock'),bestEl=document.querySelector('#best'),hud=document.querySelector('#hud'),menu=document.querySelector('#menu'),touch=document.querySelector('#touch'),runmsg=document.querySelector('#runmsg'),toast=document.querySelector('#toast');
+function fmt(ms){let s=ms/1000;return `${String(Math.floor(s/60)).padStart(2,'0')}:${String(Math.floor(s%60)).padStart(2,'0')}.${String(Math.floor(s%1*100)).padStart(2,'0')}`}
+bestEl.textContent=fmt(best);
+function makePlayer(){player=new THREE.Group();const body=new THREE.Mesh(new THREE.BoxGeometry(.72,1.05,.48),mat(0xf4c62f));body.position.y=1.25;body.castShadow=true;player.add(body);
+const head=new THREE.Mesh(new THREE.SphereGeometry(.34,12,10),mat(0xd99a70));head.position.y=2;player.add(head);
+const legs=new THREE.Mesh(new THREE.BoxGeometry(.24,.7,.3),mat(0x202d39));legs.position.set(-.2,.38,0);player.add(legs);const leg2=legs.clone();leg2.position.x=.2;player.add(leg2);
+cloak=new THREE.Mesh(new THREE.BoxGeometry(.86,1.15,.12),mat(skin==='red'?0xd5223e:skin==='cyan'?0x11d9dc:0xffc928,skin==='cyan'?0x005d66:0x000000));cloak.position.set(0,1.25,.32);player.add(cloak);player.position.set(lanes[playerLane],0,2);scene.add(player)}
+makePlayer();
+function tree(x,z){const g=new THREE.Group();const tr=new THREE.Mesh(new THREE.CylinderGeometry(.12,.2,1.5,6),trunkMat);tr.position.y=.75;g.add(tr);for(let i=0;i<3;i++){const cone=new THREE.Mesh(new THREE.ConeGeometry(1.05-i*.16,2.1,7),leafMat);cone.position.y=1.7+i*.7;cone.castShadow=true;g.add(cone)}g.position.set(x,0,z);scene.add(g);trees.push(g)}
+for(let i=0;i<38;i++){let z=-i*5-8;tree(-6.5-(i%3)*.4,z);tree(6.5+(i%4)*.35,z-2)}
+function makeCoin(lane,z){const group=new THREE.Group();const m=new THREE.Mesh(new THREE.TorusGeometry(.34,.12,8,18),coinMat);m.rotation.y=Math.PI/2;group.add(m);group.position.set(lanes[lane],1.1,z);group.userData={kind:'coin',lane};scene.add(group);objects.push(group)}
+function makeObstacle(lane,z){const m=new THREE.Mesh(new THREE.BoxGeometry(1.55,1.15,.75),barMat);m.position.set(lanes[lane],.58,z);m.castShadow=true;m.userData={kind:'obstacle',lane};scene.add(m);objects.push(m)}
+function signCode(){const g=new THREE.Group();const board=new THREE.Mesh(new THREE.BoxGeometry(1.1,.55,.12),mat(0x0b2420,0x00ff8b));board.position.y=2.1;g.add(board);const post=new THREE.Mesh(new THREE.BoxGeometry(.12,2,.12),trunkMat);post.position.y=1;g.add(post);g.position.set(5.25,0,-100);g.userData.kind='secret';scene.add(g);objects.push(g)}
+signCode();
+function showToast(t){toast.textContent=t;toast.style.display='block';setTimeout(()=>toast.style.display='none',2300)}
+function panel(id){document.querySelectorAll('.section').forEach(x=>x.classList.remove('active'));document.getElementById(id).classList.add('active')}
+function start(){objects.forEach(o=>scene.remove(o));objects=[];playerLane=1;player.position.set(0,0,2);jump=0;spawnCoin=1.4;spawnObs=2.5;elapsed=0;started=performance.now();last=started;gameOn=true;menu.style.display='none';hud.style.display='flex';touch.style.display='flex';runmsg.style.display='block';panel('home')}
+function finish(why){if(!gameOn)return;gameOn=false;elapsed=performance.now()-started;let rows=JSON.parse(localStorage.getItem('ncr_scores')||'[]');rows.push({name:'Você',time:Math.floor(elapsed)});rows.sort((a,b)=>b.time-a.time);localStorage.setItem('ncr_scores',JSON.stringify(rows.slice(0,100)));if(elapsed>best){best=elapsed;localStorage.setItem('ncr_best',best);bestEl.textContent=fmt(best)}hud.style.display='none';touch.style.display='none';runmsg.style.display='none';menu.style.display='flex';panel('dead');document.querySelector('#finaltime').textContent=fmt(elapsed);document.querySelector('#deadreason').textContent=why==='coin'?'Você tocou em uma moeda. A tentativa foi encerrada.':'Você bateu em um obstáculo.'}
+function move(d){if(gameOn)playerLane=Math.max(0,Math.min(2,playerLane+d))}
+function doJump(){if(gameOn&&jump<=0)jump=1}
+document.querySelector('#left').onclick=()=>move(-1);document.querySelector('#right').onclick=()=>move(1);document.querySelector('#jump').onclick=doJump;
+document.querySelector('#play').onclick=start;document.querySelector('#retry').onclick=start;document.querySelector('#back').onclick=()=>{panel('home');menu.style.display='flex'};
+document.querySelector('#leader').onclick=()=>{let rows=JSON.parse(localStorage.getItem('ncr_scores')||'[]');rows.sort((a,b)=>b.time-a.time);document.querySelector('#scores').innerHTML=(rows.slice(0,20).map((r,i)=>`<tr><td>${i+1}</td><td>${r.name}</td><td>${fmt(r.time)}</td></tr>`).join('')||'<tr><td colspan="3">Ainda não há tempos registrados.</td></tr>');panel('leaderboard')};
+document.querySelector('#leaderback').onclick=()=>panel('home');document.querySelector('#store').onclick=()=>panel('shop');document.querySelector('#shopback').onclick=()=>panel('home');document.querySelector('#codes').onclick=()=>panel('redeem');document.querySelector('#codeback').onclick=()=>panel('home');
+document.querySelectorAll('.skin').forEach(b=>b.onclick=()=>{skin=b.dataset.skin;cloak.material=mat(skin==='red'?0xd5223e:skin==='cyan'?0x11d9dc:0xffc928,skin==='cyan'?0x005d66:0);showToast('APARÊNCIA EQUIPADA')});
+document.querySelector('#redeembtn').onclick=()=>{let code=document.querySelector('#codeinput').value.trim().toUpperCase(),msg=document.querySelector('#codemsg');if(code==='TOP13'){skin='gold';cloak.material=mat(0xffc928);msg.textContent='Código aceito! Capa dourada desbloqueada.'}else if(code==='JADE'){skin='cyan';cloak.material=mat(0x11d9dc,0x005d66);msg.textContent='Código aceito! Capa neon desbloqueada.'}else if(code==='NOCOIN'){secretFound=true;msg.textContent='Segredo encontrado! Você descobriu o código escondido.'}else msg.textContent='Código não encontrado. Procure pistas pelo mapa.'};
+document.querySelector('#lang').onclick=()=>{lang=lang==='pt'?'en':'pt';document.querySelector('#lang').textContent=lang==='pt'?'ENGLISH':'PORTUGUÊS';document.querySelector('#play').textContent=lang==='pt'?'JOGAR':'PLAY';document.querySelector('#leader').textContent=lang==='pt'?'RANKING':'LEADERBOARD';document.querySelector('#store').textContent=lang==='pt'?'LOJA':'SHOP';document.querySelector('#codes').textContent=lang==='pt'?'CÓDIGOS':'CODES';document.querySelector('.sub').textContent=lang==='pt'?'ENDLESS RUN · DESAFIO GLOBAL':'ENDLESS RUN · GLOBAL CHALLENGE'};
+window.addEventListener('keydown',e=>{if(e.key==='ArrowLeft'||e.key.toLowerCase()==='a')move(-1);if(e.key==='ArrowRight'||e.key.toLowerCase()==='d')move(1);if(e.key===' '||e.key==='ArrowUp'||e.key.toLowerCase()==='w')doJump()});
+let sx=null;canvas.addEventListener('touchstart',e=>{sx=e.touches[0].clientX},{passive:true});canvas.addEventListener('touchend',e=>{if(sx===null)return;let dx=e.changedTouches[0].clientX-sx;if(Math.abs(dx)>25)move(dx>0?1:-1);sx=null},{passive:true});
+function animate(now){requestAnimationFrame(animate);let dt=Math.min(.045,(now-last)/1000||.016);if(gameOn){last=now;elapsed=now-started;clock.textContent=fmt(elapsed);spawnCoin-=dt;spawnObs-=dt;if(spawnCoin<=0){makeCoin(Math.floor(Math.random()*3),-90);if(Math.random()>.55)makeCoin(Math.floor(Math.random()*3),-96);spawnCoin=1.05+Math.random()*1.1}if(spawnObs<=0){makeObstacle(Math.floor(Math.random()*3),-105);spawnObs=1.6+Math.random()*1.7}
+const speed=19+Math.min(9,elapsed/18000);for(let i=objects.length-1;i>=0;i--){let o=objects[i];o.position.z+=speed*dt;if(o.userData.kind==='coin'){o.rotation.y+=dt*3;if(o.position.z>1.4&&o.position.z<3.4&&o.userData.lane===playerLane){finish('coin');break}}else if(o.userData.kind==='obstacle'){if(o.position.z>1&&o.position.z<3.1&&o.userData.lane===playerLane&&jump<.45){finish('obstacle');break}}else if(o.userData.kind==='secret'&&o.position.z>1&&o.position.z<4){showToast('PISTA: CÓDIGO NOCOIN');o.position.z=-500}
+if(o.position.z>12){scene.remove(o);objects.splice(i,1)}}
+player.position.x+=(lanes[playerLane]-player.position.x)*Math.min(1,dt*12);if(jump>0){jump=Math.max(0,jump-dt*1.9);player.position.y=Math.sin((1-jump)*Math.PI)*1.5}else player.position.y=0;
+for(let t of trees){t.position.z+=speed*dt;if(t.position.z>12)t.position.z-=190}
+}
+camera.position.x+=(player.position.x*.28-camera.position.x)*.035;camera.lookAt(player.position.x*.18,1.3,-9);renderer.render(scene,camera)}
+requestAnimationFrame(animate);
+function resize(){camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);renderer.setPixelRatio(Math.min(devicePixelRatio,1.8))}addEventListener('resize',resize);
+})();
+</script>
+</body></html>
